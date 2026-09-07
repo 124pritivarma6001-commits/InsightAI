@@ -6,8 +6,16 @@ import type {
   DatasetSummary,
 } from "../types";
 
+export const getBaseUrl = (): string => {
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
+  if (envUrl && typeof envUrl === "string" && envUrl.trim() !== "") {
+    return `${envUrl.trim().replace(/\/$/, "")}/api`;
+  }
+  return "/api";
+};
+
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: getBaseUrl(),
   timeout: 60000,
 });
 
@@ -24,6 +32,17 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (error) => {
+    const isVercel = typeof window !== "undefined" && window.location.hostname.includes("vercel.app");
+    const hasCustomBackend = Boolean((import.meta as any).env?.VITE_API_URL);
+
+    if (error?.response?.status === 404 && isVercel && !hasCustomBackend) {
+      return Promise.reject(
+        new Error(
+          "Backend API not found (404). Please set VITE_API_URL in your Vercel Project Settings > Environment Variables pointing to your deployed backend URL."
+        )
+      );
+    }
+
     const detail =
       error?.response?.data?.detail ?? error?.message ?? "Unexpected error occurred.";
     return Promise.reject(new Error(detail));
@@ -86,7 +105,7 @@ export const datasetApi = {
     return res.data;
   },
 
-  downloadCleanedUrl: (datasetId: string) => `/api/datasets/${datasetId}/download-cleaned`,
+  downloadCleanedUrl: (datasetId: string) => `${getBaseUrl()}/datasets/${datasetId}/download-cleaned`,
 };
 
 export const dashboardApi = {
