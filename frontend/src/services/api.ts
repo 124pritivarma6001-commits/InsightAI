@@ -11,7 +11,7 @@ export const getBaseUrl = (): string => {
   if (envUrl && typeof envUrl === "string" && envUrl.trim() !== "") {
     return `${envUrl.trim().replace(/\/$/, "")}/api`;
   }
-  return "/api";
+  return  "https://insightsai-end0.onrender.com/api";
 };
 
 const api = axios.create({
